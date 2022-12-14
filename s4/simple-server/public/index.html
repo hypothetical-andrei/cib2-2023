@@ -1,0 +1,96 @@
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta http-equiv="X-UA-Compatible" content="IE=edge">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Document</title>
+  <style>
+    .awesome {
+      background-color: lightgreen;
+    }
+
+    .not-awesome {
+      background-color: tomato;
+    }
+  </style>
+  <script>
+    let kittens = []
+    const SERVER = 'http://localhost:8080'
+
+    const loadAll = async () => {
+      try {
+        const response = await fetch(`${SERVER}/kittens`)
+        const data = await response.json()
+        const kittenList = document.getElementById('kittenList')
+        const kittenContent = data.map(e => `
+          <div>
+            <span>${e.name}</span>
+            <span>${e.color}</span>
+            <span>${e.birthDate ? new Date(e.birthDate).toLocaleDateString('ro-RO') : 'n/a'}</span>
+            <span class="${e.isAwesome ? 'awesome' : 'not-awesome'}">${e.isAwesome}</span>
+            <span>
+              <input type="button" value="nooo!" class="delete" data-id="${e.id}" />  
+            </span>
+          </div>
+        `).join('')
+        kittenList.innerHTML = kittenContent
+        kittenList.querySelectorAll('.delete').forEach(e => {
+          e.onclick = async () => {
+            const id = e.getAttribute('data-id')
+            await fetch(`${SERVER}/kittens/${id}`, {
+              method: 'DELETE'
+            })
+            await loadAll()
+          }
+        })
+      } catch (error) {
+        console.warn(error)
+      }
+    }
+
+    window.onload = async () => {
+      await loadAll()
+      
+      const kittenName = document.getElementById('kittenName')
+      const kittenColor = document.getElementById('kittenColor')
+      const kittenAwesomenessLevel = document.getElementById('kittenAwesomenessLevel')
+      const kittenBirthDate = document.getElementById('kittenBirthDate')
+      const kittenAddButton = document.getElementById('kittenAddButton')
+
+      kittenAddButton.onclick = async () => {
+        try {
+          const kittenPayload = {
+            name: kittenName.value,
+            color: kittenColor.value,
+            isAwesome: kittenAwesomenessLevel.value === 'on' ? true : false,
+            birthDate: kittenBirthDate.value
+          }
+          await fetch(`${SERVER}/kittens`, {
+            method: 'POST',
+            headers: {
+              'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(kittenPayload)
+          })
+          await loadAll()
+        } catch (error) {
+          console.warn(error)
+        }
+      }
+    }
+  </script>
+</head>
+<body>
+  <h3>i am the kitten interface :)</h3>
+  <div id="kittenList"></div>
+  <div id="kittenForm">
+    <input type="text" id="kittenName" placeholder="kitten name">
+    <input type="text" id="kittenColor" placeholder="kitten color">
+    <div>
+      <span>Awesome?</span><input type="checkbox" id="kittenAwesomenessLevel" /> 
+    </div>
+    <input type="date" id="kittenBirthDate">
+    <input type="button" value="Add me!" id="kittenAddButton">
+  </div>
+</body>
+</html>
